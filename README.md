@@ -27,7 +27,7 @@ You can check the `env_install.sh` for details how to install the environment.  
     conda activate pugcn
    ```
    
-3. Download PU1K dataset from [Google Driver](https://drive.google.com/drive/folders/1k1AR_oklkupP8Ssw6gOrIve0CmXJaSH3?usp=sharing)  
+3. Download PU1K dataset from [Google Drive](https://drive.google.com/drive/folders/1k1AR_oklkupP8Ssw6gOrIve0CmXJaSH3?usp=sharing)  
 
 4. Train models
     
