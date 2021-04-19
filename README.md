@@ -52,9 +52,6 @@ You can check the `env_install.sh` for details how to install the environment.  
    ```
    
 4. Evaluate models:  
-   Download the pretrained models here.
-   
-    Then run:
    ```shell
    source test_pu1k_allmodels.sh # please look this file and `test_pu1k.sh` for details
    ```
