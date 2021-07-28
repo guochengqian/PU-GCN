@@ -8,18 +8,25 @@
 
 
 # eg. Below is the env I used for the remote cluster
-module load cuda/10.0.130
+#module load cuda/10.0.130 # uncomment this line if not using the remote cluster
+
 # If below does not work, you can try to set system='linux'
-#system="centos" #
-system="linux" # or centos, difference is we comment -D_GLIBCXX_USE_CXX11_ABI=0 out in centos
-# below xxx is your account name. you may have to change the path to your own.
-tf_lib="/home/xxxx/anaconda3/envs/pugcn/lib/python3.6/site-packages/tensorflow"
-tf_inc="/home/xxxx/anaconda3/envs/pugcn/lib/python3.6/site-packages/tensorflow/include"
-cuda_lib="/home/xxxx/local/cuda-10.0/lib64"
-cuda_inc="/home/xxxx/local/cuda-10.0/include"
-cuda_dir='/home/xxxx/local/cuda-10.0'
+system=$1 # linux or centos.
+    #  usually set to linux, if does not work, try change to centos.
+    #  difference is we comment -D_GLIBCXX_USE_CXX11_ABI=0 out in centos
 
+tf_lib=$(python -c 'import tensorflow as tf; print(tf.sysconfig.get_lib())')
+tf_inc=$(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')
+cuda_dir="/usr/local/cuda-10.0"
+cuda_lib="${cuda_dir}/lib64"
+cuda_inc="${cuda_dir}/include"
 
+echo $system
+echo "===> tf_lib is located at: ${tf_lib}"
+echo "===> tf_inc is located at: ${tf_inc}"
+echo "===> cuda_dir is located at: ${cuda_dir}"
+echo "===> change the location of them if wrong"
+echo "current working dir is: $(pwd)"
 
 export LD_LIBRARY_PATH=$tf_lib:$LD_LIBRARY_PATH # you may need add this into path
 
