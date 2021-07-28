@@ -1,9 +1,13 @@
 # Created by .ignore support plugin (hsz.mobi)
 ### folder
 log/
-tf_ops/
 evaluation_code/
 data/
+pretrain/
+
+tf_ops/*/*.so
+tf_ops/*/*.o
+
 
 ### Python template
 # Byte-compiled / optimized / DLL files

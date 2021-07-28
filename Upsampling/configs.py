@@ -61,7 +61,7 @@ parser.add_argument('--seed', default=2, type=int, help="deterministic mode")
 parser.add_argument('--log_dir', default='log')
 
 # data
-parser.add_argument('--data_dir', default='data')
+parser.add_argument('--data_dir', default='./data/PU1K/pu1k_poisson_256_poisson_1024_pc_2500_patch50_addpugan.h5')
 parser.add_argument('--no_augment', action="store_false", dest="augment", default=True)
 parser.add_argument('--test_jitter', action='store_true', help='test with noise')
 parser.add_argument('--jitter_sigma', type=float, default=0.01, help="jitter augmentation")

@@ -2,7 +2,7 @@
 conda activate pugcn
 
 # kitti
-source test_realscan.sh pretrain/pugan-punet/ /data/pugcn/real_scan_kitti_pugcn --model punet --upsampler original
-source test_realscan.sh pretrain/pugan-mpu/  /data/pugcn/real_scan_kitti_pugcn --model mpu --upsampler duplicate
-source test_realscan.sh pretrain/pugan-pugan/ /data/pugcn/real_scan_kitti_pugcn --model pugan --more_up 2
-source test_realscan.sh pretrain/pugan-pugc/  /data/pugcn/real_scan_kitti_pugcn --model pugcn --k 20
+bash test_realscan.sh pretrain/pugan-punet/ ./data/real_scan_kitti_pugcn 0 --model punet --upsampler original
+bash test_realscan.sh pretrain/pugan-mpu/  ./data/real_scan_kitti_pugcn 0 --model mpu --upsampler duplicate
+bash test_realscan.sh pretrain/pugan-pugan/ ./data/real_scan_kitti_pugcn 0 --model pugan --more_up 2
+bash test_realscan.sh pretrain/pugan-pugc/  ./data/real_scan_kitti_pugcn 0 --model pugcn --k 20

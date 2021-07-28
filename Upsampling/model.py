@@ -336,20 +336,17 @@ class Model(object):
             path = os.path.join(self.opts.out_folder, point_path.split('/')[-1][:-4] + '.ply')
             idx = farthest_point_sample(out_point_num, pred_pc[np.newaxis, ...]).eval()[0]
             pred_pc = pred_pc[idx, 0:3]
-            # np.savetxt(path[:-4] + '.xyz', pred_pc, fmt='%.6f')
 
-            # apply twice to perform self.opts.up_ratio * self.opts.up_ratio upsampling.
-            input_list, pred_list, avg_patch_time = self.pc_prediction(pred_pc)
+            # uncomment to apply twice to perform self.opts.up_ratio * self.opts.up_ratio upsampling.
+            # input_list, pred_list, avg_patch_time = self.pc_prediction(pred_pc)
+            # pred_pc = np.concatenate(pred_list, axis=0)
+            # pred_pc = (pred_pc * furthest_distance) + centroid
+            # total_time += avg_patch_time
+            # pred_pc = np.reshape(pred_pc, [-1, 3])
+            # path = os.path.join(self.opts.out_folder, point_path.split('/')[-1][:-4] + '.ply')
+            # idx = farthest_point_sample(out_point_num*self.opts.up_ratio, pred_pc[np.newaxis, ...]).eval()[0]
+            # pred_pc = pred_pc[idx, 0:3]
 
-            total_time += avg_patch_time
-
-            pred_pc = np.concatenate(pred_list, axis=0)
-            pred_pc = (pred_pc * furthest_distance) + centroid
-
-            pred_pc = np.reshape(pred_pc, [-1, 3])
-            path = os.path.join(self.opts.out_folder, point_path.split('/')[-1][:-4] + '.ply')
-            idx = farthest_point_sample(out_point_num*self.opts.up_ratio, pred_pc[np.newaxis, ...]).eval()[0]
-            pred_pc = pred_pc[idx, 0:3]
             np.savetxt(path[:-4] + '.xyz', pred_pc, fmt='%.6f')
 
         logging.info('Average Inference Time: {} ms'.format(total_time / len(samples) * 1000.))

@@ -1,16 +1,20 @@
 # PU-GCN: Point Cloud Upsampling using Graph Convolutional Networks (CVPR21')
-This is the official implementation for paper [PU-GCN: Point Cloud Upsampling using Graph Convolutional Networks](https://arxiv.org/abs/1912.03264.pdf). We get accepted to CVPR21'. 
+This is the official implementation for our CVPR 21' paper [PU-GCN: Point Cloud Upsampling using Graph Convolutional Networks](https://arxiv.org/abs/1912.03264.pdf). This repository supports training our PU-GCN, and previous methods [PU-Net](https://arxiv.org/abs/1801.06761), [MPU (3PU)](https://arxiv.org/abs/1811.11286), [PU-GAN](https://arxiv.org/abs/1907.10844). 
 
-PU-GCN repo supports training our PU-GCN, and previous methods [PU-Net](https://arxiv.org/abs/1801.06761), [MPU (3PU)](https://arxiv.org/abs/1811.11286), [PU-GAN](https://arxiv.org/abs/1907.10844). Please kindly cite all of the methods. 
 
- 
+
+### Update
+* 2021/08/28: provide pretrained model. fix evaluation bug. add more tf_ops compilation instructions.
+
+  
+
 ### Installation
 This repository is based on Tensorflow (1.13.1) and the TF operators from PointNet++. Therefore, you need to install tensorflow and compile the TF operators. 
 
 You can check the `env_install.sh` for details how to install the environment.  In the second step, for compiling TF operators, please check `compile.sh` in `tf_ops` folder, one has to manually change the path!!. 
 
 
-### Usage
+### Prepare
 
 1. Clone the repository:
 
@@ -23,61 +27,79 @@ You can check the `env_install.sh` for details how to install the environment.  
    Once you have modified the path in `compile.sh` under `tf_ops`, you can simply install `pugcn` environment by:
    
    ```bash
-    source env_install.sh
+    bash env_install.sh
     conda activate pugcn
    ```
    
 3. Download PU1K dataset from [Google Drive](https://drive.google.com/drive/folders/1k1AR_oklkupP8Ssw6gOrIve0CmXJaSH3?usp=sharing)  
-
-4. Train models
+    Link the data to `./data`:
     
-   -  PU-GCN
-   ```shell
-   python main.py --phase train --model pugcn --upsampler nodeshuffle --k 20 --data_dir /data/PUGCN/PU1K/pu1k_poisson_256_poisson_1024_pc_2500_patch50_addpugan.h5
-   ```
-   
-   -  PU-Net
-   ```
-   python main.py --phase train --model punet --upsampler original  --data_dir /data/PUGCN/PU1K/pu1k_poisson_256_poisson_1024_pc_2500_patch50_addpugan.h5
-   ```
-   
-   -  mpu
-   ```
-   python main.py --phase train --model mpu --upsampler duplicate --data_dir /data/pugcn/PUGAN/train/PUGAN_poisson_256_poisson_1024.h5
-   ```
+    ```bash
+    mkdir data
+    ln -s /path/to/PU1K ./data/
+    ```
+    
+    
+### Train
 
-   -  PU-GAN
-   ```
-   python main.py --phase train --model pugan --more_up 2 --data_dir /data/pugcn/PUGAN/train/PUGAN_poisson_256_poisson_1024.h5
-   ```
-   
-4. Evaluate models:  
-   ```shell
-   source test_pu1k_allmodels.sh # please look this file and `test_pu1k.sh` for details
+Train models. Our pretrained models are available [Google Drive](https://drive.google.com/file/d/1vusBIw7sd69gnyaeoWMiGaPHfkyHM5Qb/view?usp=sharing)
+
+-  PU-GCN
+    ```shell
+    python main.py --phase train --model pugcn --upsampler nodeshuffle --k 20 
+    ```
+
+-  PU-Net
+    ```
+    python main.py --phase train --model punet --upsampler original  
+    ```
+
+-  MPU
+    ```
+    python main.py --phase train --model mpu --upsampler duplicate 
+    ```
+
+-  PU-GAN
+    ```
+    python main.py --phase train --model pugan --more_up 2 
+    ```
+
+
+
+### Evaluation
+
+1. Test on PU1K dataset
+   ```bash
+   bash test_pu1k_allmodels.sh # please modify this script and `test_pu1k.sh` if needed
    ```
 
 5. Test on real-scanned dataset
 
     ```bash
-    source test_realscan_allmodels.sh
+    bash test_realscan_allmodels.sh
     ```
 
 6. Visualization. 
     check below. You have to modify the path inside. 
+    
     ```bash
     python vis_benchmark.py
     ```
     
+
+
+
 ## Citation
 
 If PU-GCN and the repo are useful for your research, please consider citing:
 
-    @article{Qian2019PUGCNPC,
-      title={PU-GCN: Point Cloud Upsampling using Graph Convolutional Networks},
-      author={Guocheng Qian and Abdulellah Abualshour and G. Li and A. Thabet and Bernard Ghanem},
-      journal={ArXiv},
-      year={2019},
-      volume={abs/1912.03264}
+    @InProceedings{Qian_2021_CVPR,
+        author    = {Qian, Guocheng and Abualshour, Abdulellah and Li, Guohao and Thabet, Ali and Ghanem, Bernard},
+        title     = {PU-GCN: Point Cloud Upsampling Using Graph Convolutional Networks},
+        booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+        month     = {June},
+        year      = {2021},
+        pages     = {11683-11692}
     }
     
     @article{Yu2018PUNetPC,
@@ -87,7 +109,7 @@ If PU-GCN and the repo are useful for your research, please consider citing:
       year={2018},
       pages={2790-2799}
     }
-
+    
     @article{Wang2019PatchBasedP3,
       title={Patch-Based Progressive 3D Point Set Upsampling},
       author={Yifan Wang and Shihao Wu and Hui Huang and D. Cohen-Or and O. Sorkine-Hornung},
@@ -103,8 +125,9 @@ If PU-GCN and the repo are useful for your research, please consider citing:
          year = {2019}
      }
 
-    
+
+​    
 ### Acknowledgement
-This repo is heavily built on [PU-GAN code](https://github.com/liruihui/PU-GAN). We also borrow something from MPU and PU-Net. 
+This repo is heavily built on [PU-GAN code](https://github.com/liruihui/PU-GAN). We also borrow the architecture and evaluation codes from MPU and PU-Net. 
 
 
