@@ -1,5 +1,5 @@
 # PU-GCN: Point Cloud Upsampling using Graph Convolutional Networks (CVPR21')
-[CVPR21](https://openaccess.thecvf.com/content/CVPR2021/html/Qian_PU-GCN_Point_Cloud_Upsampling_Using_Graph_Convolutional_Networks_CVPR_2021_paper.html) | [Arxiv](https://arxiv.org/abs/1912.03264.pdf) | [project](https://www.deepgcns.org/app/pu-gcn) | [code](https://github.com/guochengqian/PU-GCN)
+[CVPR21](https://openaccess.thecvf.com/content/CVPR2021/html/Qian_PU-GCN_Point_Cloud_Upsampling_Using_Graph_Convolutional_Networks_CVPR_2021_paper.html) | [Arxiv](https://arxiv.org/abs/1912.03264.pdf) | [project](https://www.deepgcns.org/app/pu-gcn) | [code](https://github.com/guochengqian/PU-GCN) | [PU1K data](https://drive.google.com/drive/folders/1k1AR_oklkupP8Ssw6gOrIve0CmXJaSH3?usp=sharing)
 
 This is the official implementation for our CVPR 21' paper [PU-GCN: Point Cloud Upsampling using Graph Convolutional Networks](https://arxiv.org/abs/1912.03264.pdf). This repository supports training our PU-GCN, and previous methods [PU-Net](https://arxiv.org/abs/1801.06761), [MPU (3PU)](https://arxiv.org/abs/1811.11286), [PU-GAN](https://arxiv.org/abs/1907.10844). 
 
@@ -30,14 +30,14 @@ This is the official implementation for our CVPR 21' paper [PU-GCN: Point Cloud 
    
    Note this repository is based on Tensorflow (1.13.1) and the TF operators from PointNet++.  You can check the `env_install.sh` for details how to install the environment.  In the second step, for compiling TF operators, please check `compile.sh` in `tf_ops` folder, one may have to manually change the path!!
    
-3. Download PU1K dataset from [Google Drive](https://drive.google.com/drive/folders/1k1AR_oklkupP8Ssw6gOrIve0CmXJaSH3?usp=sharing)  
+3. Download PU1K dataset from [Google Drive](https://drive.google.com/file/d/1oTAx34YNbL6GDwHYL2qqvjmYtTVWcELg/view?usp=sharing)  
     Link the data to `./data`:
 
     ```bash
     mkdir data
     ln -s /path/to/PU1K ./data/
     ```
-
+4. Optional. The original meshes of PU1K dataset is avaialble in [Goolge Drive](https://drive.google.com/file/d/1tnMjJUeh1e27mCRSNmICwGCQDl20mFae/view?usp=sharing)
     
 ### Train
 
