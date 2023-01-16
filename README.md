@@ -8,8 +8,6 @@ This is the official implementation for our CVPR 21' paper [PU-GCN: Point Cloud 
 ### Update
 * 2021/08/28: provide pretrained model. fix evaluation bug. add more tf_ops compilation instructions.
 
-  
-
 
 ### Preparation
 
@@ -39,9 +37,14 @@ This is the official implementation for our CVPR 21' paper [PU-GCN: Point Cloud 
     ```
 4. Optional. The original meshes of PU1K dataset is avaialble in [Goolge Drive](https://drive.google.com/file/d/1tnMjJUeh1e27mCRSNmICwGCQDl20mFae/view?usp=sharing)
     
-### Train
+### Train on PU1K (Random input) 
 
-Train models. Our pretrained models are available [Google Drive](https://drive.google.com/file/d/1vusBIw7sd69gnyaeoWMiGaPHfkyHM5Qb/view?usp=sharing)
+**note**: If you favor uniform inputs, you have to retrain all models. Otherwise, the results might be really bad. To train with uniform inputs, simply add `--fps` in the command line below.
+We provide the **pretrained PU-GCN on PU-GAN's dataset using the uniform inputs** [here](https://drive.google.com/file/d/1xdG3hUomPoUhdusuYjHqCyl8YMBwYrZg/view?usp=share_link) in case it is needed. 
+
+To train models on PU1K using **random inputs**. Our pretrained models (PU-GCN on PU1K random and other models) are available [Google Drive](https://drive.google.com/file/d/1vusBIw7sd69gnyaeoWMiGaPHfkyHM5Qb/view?usp=sharing)
+
+To train on other dataset, simply change the `--data_dir` to locate to your data file. 
 
 -  PU-GCN
     ```shell
