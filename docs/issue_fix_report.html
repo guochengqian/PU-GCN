@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PU-GCN Open Issue Fix Report</title>
+  <style>
+    :root { --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --line:#334155; --accent:#38bdf8; --good:#22c55e; --warn:#f59e0b; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+    main { max-width:1120px; margin:0 auto; padding:36px 24px 64px; }
+    h1 { margin:0 0 8px; font-size:34px; line-height:1.15; }
+    h2 { margin:28px 0 12px; border-bottom:1px solid var(--line); padding-bottom:8px; }
+    h3 { margin:0 0 8px; font-size:20px; }
+    p { margin:8px 0; }
+    a { color:var(--accent); }
+    code, pre { background:#020617; color:#e2e8f0; border:1px solid #1e293b; border-radius:6px; }
+    code { padding:1px 5px; }
+    pre { padding:12px; overflow:auto; }
+    .meta { color:var(--muted); margin-bottom:24px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+    .status { display:inline-block; border-radius:999px; padding:2px 9px; font-size:12px; font-weight:700; }
+    .fixed { background:rgba(34,197,94,.14); color:#86efac; border:1px solid rgba(34,197,94,.35); }
+    .doc { background:rgba(56,189,248,.12); color:#7dd3fc; border:1px solid rgba(56,189,248,.35); }
+    .partial { background:rgba(245,158,11,.14); color:#fcd34d; border:1px solid rgba(245,158,11,.35); }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { border:1px solid var(--line); padding:8px 10px; vertical-align:top; }
+    th { background:#0b1220; text-align:left; }
+    ul { margin-top:8px; }
+    .small { color:var(--muted); font-size:13px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>PU-GCN Open Issue Fix Report</h1>
+  <div class="meta">Local working copy: <code>/Users/gqian/Downloads/PU-GCN-issues-fix</code><br>Base commit: <code>0d29ee7c819f3cf80c4535c581d701f4e9bbb8b8</code></div>
+
+  <section class="card">
+    <h2>Summary</h2>
+    <p>I inspected the currently open GitHub issues in <code>guochengqian/PU-GCN</code> and made a local fix set. The changes combine code fixes for reproducible bugs, safer evaluation behavior, helper scripts for recurring data questions, and a docs page that answers the dataset/domain-transfer issues.</p>
+    <p>Primary changed/added paths:</p>
+    <pre>README.md
+Common/metrics.py
+Upsampling/model.py
+Upsampling/sampling_utils.py
+evaluate.py
+evaluation_code/CMakeLists.txt
+evaluation_code/compile.sh
+evaluation_code/evaluation.cpp
+docs/issue_fixes.md
+tools/check_h5.py
+tools/mesh_to_h5.py
+tests/test_metrics.py
+tests/test_sampling_utils.py</pre>
+  </section>
+
+  <h2>Issue-by-issue handling</h2>
+  <div class="grid">
+    <article class="card">
+      <h3>#21: <a href="https://github.com/guochengqian/PU-GCN/issues/21">model.py IndexError in test phase</a></h3>
+      <span class="status fixed">code fixed</span>
+      <p><b>Root cause:</b> FPS was sometimes asked to sample more points than available candidates. The custom CUDA op can then return invalid indices, which crash NumPy indexing during patch extraction or final output sampling.</p>
+      <p><b>Fix:</b></p>
+      <ul>
+        <li>Added <code>Upsampling/sampling_utils.py</code> with <code>clamp_sample_count()</code> and <code>safe_index_array()</code>.</li>
+        <li>Clamped patch seed count before <code>farthest_point_sample()</code>.</li>
+        <li>Filtered/fixed FPS indices before indexing <code>pc</code> and <code>pred_pc</code>.</li>
+        <li>Warns if requested output points exceed candidate predictions.</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h3>#10: <a href="https://github.com/guochengqian/PU-GCN/issues/10">Metric calculation and PU-GAN dataset</a></h3>
+      <span class="status fixed">Hausdorff code fixed</span> <span class="status doc">P2F/dataset documented</span>
+      <p><b>Root cause:</b> Hausdorff used the sum of directional maxima. Symmetric Hausdorff should be <code>max(max(A), max(B))</code>.</p>
+      <p><b>Fix:</b> Added <code>Common/metrics.py::hausdorff_from_nn_distances()</code> and updated <code>evaluate.py</code>.</p>
+      <p><b>P2F note:</b> I did not silently change P2F to a symmetric metric because that would break comparability with existing PU-GCN/PU-GAN/MPU tables. I documented that current P2F is prediction-to-mesh-surface only.</p>
+    </article>
+
+    <article class="card">
+      <h3>#11: <a href="https://github.com/guochengqian/PU-GCN/issues/11">P2F metric returns NaN</a></h3>
+      <span class="status fixed">robustness fixed</span>
+      <p><b>Root cause:</b> NaNs can come from non-finite prediction points, unreadable/empty input files, invalid mesh input, or unstable CGAL closest-surface projection.</p>
+      <p><b>Fix:</b> <code>evaluation_code/evaluation.cpp</code> now checks file opening, validates prediction extensions, filters non-finite points, skips non-finite projections/distances, and avoids NaN std for a single valid distance.</p>
+    </article>
+
+    <article class="card">
+      <h3>#13: <a href="https://github.com/guochengqian/PU-GCN/issues/13">Evaluation compilation fails, then no ./evaluation</a></h3>
+      <span class="status fixed">build script fixed</span>
+      <p><b>Root cause:</b> CMake only printed a warning when CGAL was missing, so no executable was built, but <code>compile.sh</code> still ran <code>./evaluation</code>.</p>
+      <p><b>Fix:</b> CMake now uses <code>FATAL_ERROR</code> when CGAL is missing; <code>compile.sh</code> uses <code>set -euo pipefail</code>, documents apt/module dependency hints, and checks executable existence before running.</p>
+    </article>
+
+    <article class="card">
+      <h3>#16: <a href="https://github.com/guochengqian/PU-GCN/issues/16">Empty HDF5 file in PU1K/train</a></h3>
+      <span class="status fixed">support script added</span>
+      <p><b>Root cause:</b> Most likely incomplete Google Drive download, failed unzip, or zero-byte placeholder. The released ZIP contains a non-empty HDF5 file.</p>
+      <p><b>Fix:</b> Added <code>tools/check_h5.py</code> to report file size, keys, shapes, and optional finite-coordinate checks.</p>
+      <pre>python tools/check_h5.py ./data/PU1K/train/pu1k_poisson_256_poisson_1024_pc_2500_patch50_addpugan.h5 --check_finite</pre>
+    </article>
+
+    <article class="card">
+      <h3>#18: <a href="https://github.com/guochengqian/PU-GCN/issues/18">Custom Dataset</a></h3>
+      <span class="status fixed">converter added</span>
+      <p><b>Request:</b> How to convert custom meshes to PU-GCN HDF5 format.</p>
+      <p><b>Fix:</b> Added <code>tools/mesh_to_h5.py</code>, which samples mesh surfaces and writes <code>poisson_1024</code> and <code>poisson_256</code> keys.</p>
+      <pre>pip install trimesh h5py scipy
+python tools/mesh_to_h5.py --mesh_glob "./my_meshes/*.off" --output ./data/custom.h5 --samples_per_mesh 20</pre>
+    </article>
+
+    <article class="card">
+      <h3>#17: <a href="https://github.com/guochengqian/PU-GCN/issues/17">PU1K filename contains addpugan</a></h3>
+      <span class="status doc">documented</span>
+      <p><b>Fix:</b> Added a FAQ note in <code>docs/issue_fixes.md</code>: the <code>addpugan</code> suffix indicates PU-GAN-style additional training data/patches for baseline compatibility; it is not a corrupted download.</p>
+    </article>
+
+    <article class="card">
+      <h3>#15: <a href="https://github.com/guochengqian/PU-GCN/issues/15">Where is PU-GAN test data?</a></h3>
+      <span class="status doc">documented</span>
+      <p><b>Fix:</b> Added a FAQ note explaining that PU-GAN's public test release is mesh-based. Point-cloud input/GT pairs are typically generated from meshes by each evaluation pipeline; PU1K includes explicit point-cloud test files and is better for reproducible point-cloud pairs.</p>
+    </article>
+
+    <article class="card">
+      <h3>#14: <a href="https://github.com/guochengqian/PU-GCN/issues/14">KITTI raw has hollow upsampled clouds</a></h3>
+      <span class="status doc">documented mitigation</span>
+      <p><b>Root cause:</b> Domain mismatch: PU-GCN checkpoints are trained on normalized object/patch datasets, not full raw sparse LiDAR scenes.</p>
+      <p><b>Fix:</b> Added mitigation guidance: use matching random/uniform checkpoint, crop/normalize local patches, increase patch overlap, and treat KITTI raw as domain-transfer rather than benchmark reproduction.</p>
+    </article>
+  </div>
+
+  <section class="card">
+    <h2>Verification performed</h2>
+    <table>
+      <tr><th>Check</th><th>Result</th></tr>
+      <tr><td><code>python3 -m pytest tests/test_sampling_utils.py tests/test_metrics.py -q</code></td><td>5 passed</td></tr>
+      <tr><td><code>python3 -m py_compile</code> on changed Python files</td><td>passed</td></tr>
+      <tr><td><code>bash -n evaluation_code/compile.sh</code></td><td>passed</td></tr>
+      <tr><td><code>tools/check_h5.py</code> on a temporary HDF5 file</td><td>reported expected keys/shapes</td></tr>
+      <tr><td>CMake/CGAL compile</td><td class="small">skipped locally because <code>cmake</code> is not installed in this Hermes environment; script now fails early with an explicit CGAL message instead of running a missing executable.</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>How you can apply these fixes</h2>
+    <ol>
+      <li>Open the local working copy: <code>/Users/gqian/Downloads/PU-GCN-issues-fix</code>.</li>
+      <li>Review changed files with <code>git diff</code> and untracked files in <code>docs/</code>, <code>tools/</code>, <code>tests/</code>, <code>Common/metrics.py</code>, and <code>Upsampling/sampling_utils.py</code>.</li>
+      <li>Copy the changed files into your real PU-GCN checkout or apply the patch file I generated after this report.</li>
+      <li>Run the lightweight verification commands above.</li>
+      <li>If you have a CGAL environment, run <code>cd evaluation_code &amp;&amp; bash compile.sh</code>.</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

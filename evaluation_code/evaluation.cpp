@@ -1,4 +1,8 @@
 #include <cstdlib>
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <vector>
 #include <math.h>       /* sqrt */
 #include <iostream>
 #include <fstream>
@@ -57,14 +61,22 @@ typedef Traits::Point_3 Point_3;
 typedef Traits::Vector_3 Vector_3;
 
 
+bool is_finite_point(const Point_3& point){
+  return std::isfinite(point[0]) && std::isfinite(point[1]) && std::isfinite(point[2]);
+}
+
 void calculate_mean_var(std::vector<float> v){
+  if (v.empty()){
+    std::cout << "No valid distances were computed" << std::endl;
+    return;
+  }
   double sum = std::accumulate(std::begin(v), std::end(v), 0.0);
   double mean =  sum / v.size();
   double accum = 0.0;
   std::for_each (std::begin(v), std::end(v), [&](const double d) {
       accum += (d - mean) * (d - mean);
   });
-  double stdev = sqrt(accum / (v.size()-1));
+  double stdev = v.size() > 1 ? sqrt(accum / (v.size()-1)) : 0.0;
   auto max = std::max_element(std::begin(v), std::end(v));
   auto min = std::min_element(std::begin(v), std::end(v));
   std::cout<<"Mean: "<<mean<<" std: "<<stdev<<" min: "<<*min<<" max: "<<*max<<std::endl;
@@ -138,11 +150,18 @@ int main(int argc, char* argv[]){
   //std::istream input(argv[1]);
   std::filebuf fb;
   fb.open(argv[1],std::ios::in);
+  if (!fb.is_open()){
+    std::cerr << "Could not open mesh file: " << argv[1] << std::endl;
+    return 1;
+  }
   std::istream is(&fb);
 
   std::vector<Point_3> points;
   std::vector<std::vector<std::size_t> > triangles;
-  CGAL::read_OFF(is, points, triangles);
+  if (!CGAL::read_OFF(is, points, triangles)){
+    std::cerr << "Failed to read OFF mesh: " << argv[1] << std::endl;
+    return 1;
+  }
 
   CGAL::Polygon_mesh_processing::orient_polygon_soup(points, triangles);
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, triangles, tmesh);
@@ -180,6 +199,10 @@ int main(int argc, char* argv[]){
   //std::vector<Vector_3> normals;
   std::string file_path = argv[2];
   std::ifstream stream(argv[2]);
+  if (!stream.is_open()){
+    std::cerr << "Could not open prediction file: " << argv[2] << std::endl;
+    return 1;
+  }
   std::string ext = file_path.substr(file_path.find_last_of(".") + 1);
   Point_3 p;
   Vector_3 v;
@@ -188,12 +211,31 @@ int main(int argc, char* argv[]){
     CGAL::read_ply_points(stream, std::back_inserter(pred_points));
   } else if (ext == "xyz") {
     while(stream >> p){
-      pred_points.push_back(p);
+      if (is_finite_point(p)){
+        pred_points.push_back(p);
+      } else {
+        std::cerr << "Skip non-finite prediction point in " << argv[2] << std::endl;
+      }
       //normals.push_back(v);
     }
+  } else {
+    std::cerr << "Unsupported prediction extension: " << ext << " (expected .ply or .xyz)" << std::endl;
+    return 1;
+  }
+  const std::size_t pred_before_filter = pred_points.size();
+  pred_points.erase(std::remove_if(pred_points.begin(), pred_points.end(),
+                                   [](const Point_3& point){ return !is_finite_point(point); }),
+                    pred_points.end());
+  if (pred_points.size() != pred_before_filter){
+    std::cerr << "Skipped " << (pred_before_filter - pred_points.size())
+              << " non-finite prediction points" << std::endl;
   }
   const int pred_cnt = pred_points.size();
   std::cout << pred_cnt << " prediction points" << std::endl;
+  if (pred_cnt == 0){
+    std::cerr << "No valid prediction points were read from " << argv[2] << std::endl;
+    return 1;
+  }
 
   // For each predicted point, find the coresponded nearest point on the surface.
   Surface_mesh_shortest_path shortest_paths(tmesh);
@@ -201,7 +243,8 @@ int main(int argc, char* argv[]){
   shortest_paths.build_aabb_tree<AABB_face_graph_traits>(tree);
   std::vector<Face_location> pred_face_locations(pred_cnt);
   std::vector<Point_3> pred_map_points(pred_cnt);
-  std::vector<float> nearest_distance(pred_cnt);
+  std::vector<float> nearest_distance;
+  nearest_distance.reserve(pred_cnt);
   std::vector<Vector_3> gt_normals(pred_cnt);
 
   // find the basic file name of the mesh
@@ -226,9 +269,18 @@ int main(int argc, char* argv[]){
     pred_face_locations[i] = location;
     // convert the face location to xyz coordinate
     pred_map_points[i] = shortest_paths.point(location.first,location.second);
+    if (!is_finite_point(pred_map_points[i])){
+      std::cerr << "Skip point " << i << ": nearest surface projection is non-finite" << std::endl;
+      continue;
+    }
     //calculate the distance
-    nearest_distance[i] = CGAL::sqrt(CGAL::squared_distance(pred_points[i],pred_map_points[i]));
-    distace_output << pred_points[i][0]<<" "<<pred_points[i][1]<< " "<<pred_points[i][2]<< " "<<nearest_distance[i]<<std::endl;
+    const double distance = CGAL::sqrt(CGAL::squared_distance(pred_points[i],pred_map_points[i]));
+    if (!std::isfinite(distance)){
+      std::cerr << "Skip point " << i << ": point2surface distance is non-finite" << std::endl;
+      continue;
+    }
+    nearest_distance.push_back(static_cast<float>(distance));
+    distace_output << pred_points[i][0]<<" "<<pred_points[i][1]<< " "<<pred_points[i][2]<< " "<<distance<<std::endl;
   }
   std::cout << "The point2surface distance:\n";
   calculate_mean_var(nearest_distance);

@@ -6,6 +6,7 @@ This is the official implementation for our CVPR 21' paper [PU-GCN: Point Cloud 
 
 
 ### Update
+* 2026/06/02: add fixes and troubleshooting notes for open GitHub issues: safe FPS indexing during test, corrected Hausdorff calculation, more robust CGAL evaluation compilation/P2F handling, HDF5 inspection, and a custom mesh-to-HDF5 helper. See [`docs/issue_fixes.md`](docs/issue_fixes.md).
 * 2021/08/28: provide pretrained model. fix evaluation bug. add more tf_ops compilation instructions.
 
 
