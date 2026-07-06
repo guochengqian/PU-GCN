@@ -25,6 +25,6 @@ if ( CGAL_FOUND )
   endforeach()
 
 else()
-    message(STATUS "This program requires the CGAL library, and will not be compiled.")
+    message(FATAL_ERROR "CGAL not found. Install libcgal-dev/CGAL and Boost development packages before compiling evaluation_code.")
 endif()
 

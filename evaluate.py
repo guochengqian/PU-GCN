@@ -9,6 +9,7 @@ from collections import OrderedDict
 import os
 from Common import pc_util
 from Common.pc_util import load
+from Common.metrics import hausdorff_from_nn_distances
 from Common.ops import normalize_point_cloud
 from tf_ops.nn_distance import tf_nndistance
 from sklearn.neighbors import NearestNeighbors
@@ -154,7 +155,7 @@ with tf.Session() as sess:
                 cd_forward_value, cd_backward_value = sess.run([cd_forward, cd_backward], feed_dict={pred_placeholder:pred, gt_placeholder:gt})
 
                 md_value = np.mean(cd_forward_value)+np.mean(cd_backward_value)
-                hd_value = np.max(np.amax(cd_forward_value, axis=0)+np.amax(cd_backward_value, axis=0))
+                hd_value = hausdorff_from_nn_distances(cd_forward_value, cd_backward_value)
                 cd_backward_value = np.mean(cd_backward_value)
                 cd_forward_value = np.mean(cd_forward_value)
                 row["CD"] = cd_forward_value+cd_backward_value

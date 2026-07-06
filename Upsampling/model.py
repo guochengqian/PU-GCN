@@ -14,6 +14,7 @@ from Common import model_utils
 from Common import pc_util
 from Common.loss_utils import pc_distance, get_uniform_loss, get_repulsion_loss, discriminator_loss, generator_loss
 from tf_ops.sampling.tf_sampling import farthest_point_sample
+from Upsampling.sampling_utils import clamp_sample_count, safe_index_array
 import logging
 import os
 from tqdm import tqdm
@@ -262,11 +263,15 @@ class Model(object):
         points = tf.convert_to_tensor(np.expand_dims(pc, axis=0), dtype=tf.float32)
         start = time()
         print('------------------patch_num_point:', self.opts.patch_num_point)
-        seed1_num = int(pc.shape[0] / self.opts.patch_num_point * self.opts.patch_num_ratio)
+        seed1_num = clamp_sample_count(
+            int(pc.shape[0] / self.opts.patch_num_point * self.opts.patch_num_ratio),
+            pc.shape[0],
+            minimum=1)
 
-        # FPS sampling
+        # FPS sampling. The CUDA op is only well-defined when npoint <= ndataset;
+        # sanitize its output as a second guard against out-of-bounds indices.
         seed = farthest_point_sample(seed1_num, points).eval()[0]
-        seed_list = seed[:seed1_num]
+        seed_list = safe_index_array(seed[:seed1_num], pc.shape[0], desired_count=seed1_num)
         print("farthest distance sampling cost", time() - start)
         print("number of patches: %d" % len(seed_list))
         input_list = []
@@ -334,7 +339,13 @@ class Model(object):
 
             pred_pc = np.reshape(pred_pc, [-1, 3])
             path = os.path.join(self.opts.out_folder, point_path.split('/')[-1][:-4] + '.ply')
-            idx = farthest_point_sample(out_point_num, pred_pc[np.newaxis, ...]).eval()[0]
+            sample_num = clamp_sample_count(out_point_num, pred_pc.shape[0], minimum=1)
+            if sample_num < out_point_num:
+                logging.warning(
+                    'Requested %d output points but only %d candidates are available; writing %d points.',
+                    out_point_num, pred_pc.shape[0], sample_num)
+            idx = farthest_point_sample(sample_num, pred_pc[np.newaxis, ...]).eval()[0]
+            idx = safe_index_array(idx, pred_pc.shape[0], desired_count=sample_num)
             pred_pc = pred_pc[idx, 0:3]
 
             # uncomment to apply twice to perform self.opts.up_ratio * self.opts.up_ratio upsampling.
